@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.3]
+- Replaced embed-based preview with PDF.js canvas rendering inside the extension panel for more reliable in-editor preview.
+- Improved preview loading feedback and error reporting.
+
 ## [0.0.2]
 - Switched PDF open command to an in-extension preview panel for a richer viewer experience.
 - Added direct-open fallback link inside preview panel.
