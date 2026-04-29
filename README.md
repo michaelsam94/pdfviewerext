@@ -9,6 +9,8 @@ Open PDF files quickly inside VS Code.
 - Command: `PDF Viewer: Open File`
 - Right-click `.pdf` in Explorer and open directly from the context menu
 - Open selected PDF in an in-extension preview panel
+- Commands: `PDF Viewer: Zoom In`, `PDF Viewer: Zoom Out`, `PDF Viewer: Reset Zoom`
+- Zoom shortcut in preview: `Cmd + Mouse Wheel` (macOS), `Ctrl + Mouse Wheel` (Windows/Linux)
 - Optional preserve-focus behavior
 
 ## Extension Settings

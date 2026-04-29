@@ -1,8 +1,10 @@
 import * as vscode from "vscode";
 import * as path from "node:path";
 
+let currentPanel: vscode.WebviewPanel | undefined;
+
 export function activate(context: vscode.ExtensionContext) {
-  const disposable = vscode.commands.registerCommand(
+  const openDisposable = vscode.commands.registerCommand(
     "pdfviewerext.openPdfFile",
     async (resource?: vscode.Uri) => {
       const sourceUri = await resolveSourceUri(resource);
@@ -36,6 +38,12 @@ export function activate(context: vscode.ExtensionContext) {
           panel.webview.asWebviewUri(sourceUri),
           sourceUri.fsPath
         );
+        currentPanel = panel;
+        panel.onDidDispose(() => {
+          if (currentPanel === panel) {
+            currentPanel = undefined;
+          }
+        });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         vscode.window.showErrorMessage(`PDF open failed: ${message}`);
@@ -43,7 +51,25 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
-  context.subscriptions.push(disposable);
+  const zoomInDisposable = vscode.commands.registerCommand(
+    "pdfviewerext.zoomIn",
+    () => sendZoomCommand("zoomIn")
+  );
+  const zoomOutDisposable = vscode.commands.registerCommand(
+    "pdfviewerext.zoomOut",
+    () => sendZoomCommand("zoomOut")
+  );
+  const resetZoomDisposable = vscode.commands.registerCommand(
+    "pdfviewerext.resetZoom",
+    () => sendZoomCommand("resetZoom")
+  );
+
+  context.subscriptions.push(
+    openDisposable,
+    zoomInDisposable,
+    zoomOutDisposable,
+    resetZoomDisposable
+  );
 }
 
 async function resolveSourceUri(
@@ -114,10 +140,21 @@ function getPdfViewerHtml(pdfUri: vscode.Uri, filePath: string): string {
         border-radius: 6px;
         z-index: 2;
       }
+      .hint {
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        background: rgba(0, 0, 0, 0.75);
+        padding: 8px 12px;
+        border-radius: 6px;
+        z-index: 2;
+        font-size: 12px;
+      }
     </style>
   </head>
   <body>
     <div id="status" class="status">Loading PDF preview...</div>
+    <div class="hint">Zoom: Ctrl/Cmd + Mouse Wheel</div>
     <div id="pages"></div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.5.136/pdf.min.mjs" type="module"></script>
     <script type="module">
@@ -127,16 +164,21 @@ function getPdfViewerHtml(pdfUri: vscode.Uri, filePath: string): string {
       const source = "${source}";
       const pagesContainer = document.getElementById("pages");
       const status = document.getElementById("status");
+      let pdfDoc = null;
+      let zoom = 1;
+      const baseScale = 1.3;
 
       async function renderPdf() {
+        if (!pdfDoc) {
+          return;
+        }
         try {
-          const loadingTask = pdfjsLib.getDocument({ url: source });
-          const pdf = await loadingTask.promise;
-          status.textContent = "Rendering " + pdf.numPages + " pages...";
+          pagesContainer.innerHTML = "";
+          status.textContent = "Rendering " + pdfDoc.numPages + " pages at " + Math.round(zoom * 100) + "%...";
 
-          for (let pageNum = 1; pageNum <= pdf.numPages; pageNum += 1) {
-            const page = await pdf.getPage(pageNum);
-            const viewport = page.getViewport({ scale: 1.3 });
+          for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum += 1) {
+            const page = await pdfDoc.getPage(pageNum);
+            const viewport = page.getViewport({ scale: baseScale * zoom });
             const canvas = document.createElement("canvas");
             const context = canvas.getContext("2d");
             if (!context) {
@@ -148,7 +190,7 @@ function getPdfViewerHtml(pdfUri: vscode.Uri, filePath: string): string {
             pagesContainer.appendChild(canvas);
           }
 
-          status.textContent = "PDF preview loaded";
+          status.textContent = "PDF preview loaded (" + Math.round(zoom * 100) + "%)";
           setTimeout(() => status.remove(), 1200);
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
@@ -156,7 +198,63 @@ function getPdfViewerHtml(pdfUri: vscode.Uri, filePath: string): string {
         }
       }
 
-      renderPdf();
+      async function loadPdf() {
+        try {
+          const loadingTask = pdfjsLib.getDocument({ url: source });
+          pdfDoc = await loadingTask.promise;
+          await renderPdf();
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          status.textContent = "Preview failed: " + message;
+        }
+      }
+
+      function setZoom(nextZoom) {
+        const clamped = Math.min(3, Math.max(0.4, nextZoom));
+        if (Math.abs(clamped - zoom) < 0.001) {
+          return;
+        }
+        zoom = clamped;
+        renderPdf();
+      }
+
+      window.addEventListener("wheel", (event) => {
+        if (!(event.ctrlKey || event.metaKey)) {
+          return;
+        }
+        event.preventDefault();
+        const delta = event.deltaY > 0 ? -0.1 : 0.1;
+        setZoom(zoom + delta);
+      }, { passive: false });
+
+      window.addEventListener("keydown", (event) => {
+        if (!(event.ctrlKey || event.metaKey)) {
+          return;
+        }
+        if (event.key === "+" || event.key === "=") {
+          event.preventDefault();
+          setZoom(zoom + 0.1);
+        } else if (event.key === "-") {
+          event.preventDefault();
+          setZoom(zoom - 0.1);
+        } else if (event.key === "0") {
+          event.preventDefault();
+          setZoom(1);
+        }
+      });
+
+      window.addEventListener("message", (event) => {
+        const command = event.data?.command;
+        if (command === "zoomIn") {
+          setZoom(zoom + 0.1);
+        } else if (command === "zoomOut") {
+          setZoom(zoom - 0.1);
+        } else if (command === "resetZoom") {
+          setZoom(1);
+        }
+      });
+
+      loadPdf();
     </script>
   </body>
 </html>`;
@@ -177,6 +275,16 @@ function escapeJsString(value: string): string {
     .replace(/"/g, '\\"')
     .replace(/\n/g, "\\n")
     .replace(/\r/g, "\\r");
+}
+
+function sendZoomCommand(command: "zoomIn" | "zoomOut" | "resetZoom"): void {
+  if (!currentPanel) {
+    vscode.window.showWarningMessage(
+      "Open a PDF in PDF Viewer first to use zoom commands."
+    );
+    return;
+  }
+  currentPanel.webview.postMessage({ command });
 }
 
 export function deactivate() {}

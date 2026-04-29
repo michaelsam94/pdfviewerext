@@ -2,7 +2,7 @@
   "name": "pdfviewerext",
   "displayName": "PdfViewer",
   "description": "Open PDF files quickly from VS Code",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "license": "MIT",
   "publisher": "michaelsam94",
   "icon": "icon.png",
@@ -29,6 +29,18 @@
       {
         "command": "pdfviewerext.openPdfFile",
         "title": "PDF Viewer: Open File"
+      },
+      {
+        "command": "pdfviewerext.zoomIn",
+        "title": "PDF Viewer: Zoom In"
+      },
+      {
+        "command": "pdfviewerext.zoomOut",
+        "title": "PDF Viewer: Zoom Out"
+      },
+      {
+        "command": "pdfviewerext.resetZoom",
+        "title": "PDF Viewer: Reset Zoom"
       }
     ],
     "menus": {

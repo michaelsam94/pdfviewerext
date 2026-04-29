@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.4]
+- Added zoom commands: `Zoom In`, `Zoom Out`, and `Reset Zoom`.
+- Added modifier + scroll zoom support: `Cmd + Wheel` on macOS and `Ctrl + Wheel` on Windows/Linux.
+
 ## [0.0.3]
 - Replaced embed-based preview with PDF.js canvas rendering inside the extension panel for more reliable in-editor preview.
 - Improved preview loading feedback and error reporting.
