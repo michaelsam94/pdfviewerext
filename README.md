@@ -8,7 +8,7 @@ Open PDF files quickly inside VS Code.
 
 - Command: `PDF Viewer: Open File`
 - Right-click `.pdf` in Explorer and open directly from the context menu
-- Open selected PDF in the active editor or side editor group
+- Open selected PDF in an in-extension preview panel
 - Optional preserve-focus behavior
 
 ## Extension Settings
