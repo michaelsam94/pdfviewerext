@@ -1,0 +1,77 @@
+{
+  "name": "pdfviewerext",
+  "displayName": "PdfViewer",
+  "description": "Open PDF files quickly from VS Code",
+  "version": "0.0.1",
+  "license": "MIT",
+  "publisher": "michaelsam94",
+  "icon": "icon.png",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/michaelsam94/pdfviewerext.git"
+  },
+  "homepage": "https://github.com/michaelsam94/pdfviewerext",
+  "bugs": {
+    "url": "https://github.com/michaelsam94/pdfviewerext/issues"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "pdfviewerext.openPdfFile",
+        "title": "PDF Viewer: Open File"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "pdfviewerext.openPdfFile",
+          "when": "resourceExtname == .pdf",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "PDF Viewer",
+      "properties": {
+        "pdfviewerext.openToSide": {
+          "type": "boolean",
+          "default": true,
+          "description": "Open PDF files in a side editor group."
+        },
+        "pdfviewerext.preserveFocus": {
+          "type": "boolean",
+          "default": false,
+          "description": "Preserve focus in the current editor when opening PDF."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts",
+    "pretest": "npm run compile && npm run lint",
+    "test": "@vscode/test-electron"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/node": "^20.14.2",
+    "@types/vscode": "^1.90.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "@vscode/test-electron": "^2.4.1",
+    "eslint": "^9.5.0",
+    "typescript": "^5.5.2"
+  }
+}
